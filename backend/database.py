@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-load_dotenv('/Users/muzamono/DataEngineering/projects/receipt-tracker/.env')
+load_dotenv('path-to-.env')
 
 DATABASE_URL = (
     f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
