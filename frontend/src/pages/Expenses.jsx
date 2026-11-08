@@ -11,6 +11,7 @@ export default function Expenses() {
   const [paymentTypes, setPaymentTypes] = useState([])
   const [formMode, setFormMode] = useState(null)
   const [editingExpense, setEditingExpense] = useState(null)
+  const [expandedIds, setExpandedIds] = useState(new Set())
 
   function fetchExpenses() {
     client.get('/expenses').then(res => setExpenses(res.data))
@@ -48,6 +49,14 @@ export default function Expenses() {
   function startAdd() {
     setEditingExpense(null)
     setFormMode(formMode === 'add' ? null : 'add')
+  }
+
+  function toggleLineItems(id) {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
   }
 
   function getCategory(id) {
@@ -191,6 +200,9 @@ export default function Expenses() {
         const category = getCategory(e.category_id)
         const paymentType = getPaymentType(e.payment_type_id)
         const accentColor = category?.color || '#E5E2DA'
+        const lineItems = e.line_items || []
+        const hasLineItems = Array.isArray(lineItems) && lineItems.length > 0
+        const isExpanded = expandedIds.has(e.id)
 
         return (
           <div key={e.id} style={{
@@ -229,15 +241,72 @@ export default function Expenses() {
                     <img
                       src={receiptImageUrl(e.receipt.file_path)}
                       alt="Receipt"
+                      onError={ev => { ev.target.style.display = 'none' }}
                       style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px', marginTop: '8px', border: '1px solid #E5E2DA' }}
                     />
                   </a>
                 )}
               </div>
-              <span className="mono" style={{ fontWeight: 600, fontSize: '15px', color: '#5B8A72', whiteSpace: 'nowrap', marginLeft: '8px' }}>
-                {e.currency} {parseFloat(e.total_amount).toFixed(2)}
-              </span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '8px' }}>
+                <span
+                  className="mono"
+                  onClick={() => hasLineItems && toggleLineItems(e.id)}
+                  style={{
+                    fontWeight: 600,
+                    fontSize: '15px',
+                    color: '#5B8A72',
+                    whiteSpace: 'nowrap',
+                    cursor: hasLineItems ? 'pointer' : 'default',
+                    userSelect: 'none'
+                  }}
+                >
+                  {e.currency} {parseFloat(e.total_amount).toFixed(2)}
+                </span>
+                {hasLineItems && (
+                  <span style={{ fontSize: '11px', color: '#8A8780', marginTop: '2px' }}>
+                    {isExpanded ? 'hide items ▲' : `${lineItems.length} items ▼`}
+                  </span>
+                )}
+              </div>
             </div>
+
+            {hasLineItems && isExpanded && (
+              <div style={{
+                marginTop: '10px',
+                borderTop: '1px solid #E5E2DA',
+                paddingTop: '10px'
+              }}>
+                {lineItems.map((item, idx) => {
+                  const qty = item.quantity ?? 1
+                  const unitPrice = item.unit_price
+                  const total = item.total ?? (unitPrice ? qty * unitPrice : null)
+
+                  return (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '6px',
+                      fontSize: '13px'
+                    }}>
+                      <div style={{ flex: 1, color: '#1A1A1A' }}>
+                        <span>{item.name}</span>
+                        {unitPrice && qty !== 1 && (
+                          <span style={{ color: '#8A8780', marginLeft: '6px' }}>
+                            x{qty} @ {parseFloat(unitPrice).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="mono" style={{ color: '#5B8A72', marginLeft: '8px', whiteSpace: 'nowrap' }}>
+                        {total != null ? parseFloat(total).toFixed(2) : '—'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '12px', marginTop: '10px', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => startEdit(e)}

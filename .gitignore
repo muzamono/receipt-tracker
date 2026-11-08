@@ -5,7 +5,7 @@ __pycache__/
 venv/
 
 # Env secrets
-.env
+.env*
 *.env.local
 
 # Node
@@ -17,4 +17,4 @@ frontend/.vite/
 .DS_Store
 
 # Sample data
-data/samples/
+/data/

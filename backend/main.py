@@ -136,6 +136,49 @@ def upload_receipt(file: UploadFile = File(...), db: Session = Depends(get_db)):
     db.refresh(record)
     return record
 
+@app.post("/receipts/extract")
+async def extract_receipt_endpoint(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    # Read bytes once for both saving and extraction
+    file_bytes = await file.read()
+    ext = Path(file.filename).suffix.lower()
+    file_id = str(uuid4())
+
+    # Save file to disk
+    if ext == ".heic":
+        image = Image.open(io.BytesIO(file_bytes))
+        filename = f"{file_id}.jpg"
+        image.save(UPLOAD_DIR / filename, "JPEG")
+    else:
+        filename = f"{file_id}{ext}"
+        with open(UPLOAD_DIR / filename, "wb") as buffer:
+            buffer.write(file_bytes)
+
+    # Create receipt record
+    receipt = Receipt(file_name=file.filename, file_path=filename, status="pending")
+    db.add(receipt)
+    db.commit()
+    db.refresh(receipt)
+
+    # Run Gemini extraction
+    from extraction.extract import extract_receipt
+    extracted = extract_receipt(file_bytes)
+
+    # Map category name → category_id (case-insensitive)
+    category_id = None
+    if extracted.get("category"):
+        category = db.query(Category).filter(
+            Category.name.ilike(extracted["category"])
+        ).first()
+        if category:
+            category_id = category.id
+
+    return {
+        "receipt_id": receipt.id,
+        "extracted": {
+            **extracted,
+            "category_id": category_id,
+        }
+    }
 
 @app.post("/expenses", response_model=ExpenseResponse)
 def create_expense(expense: ExpenseCreate, db: Session = Depends(get_db)):
