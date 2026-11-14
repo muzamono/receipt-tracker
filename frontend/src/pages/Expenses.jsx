@@ -248,17 +248,23 @@ export default function Expenses() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '8px' }}>
+              <div onClick={() => hasLineItems && toggleLineItems(e.id)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  marginLeft: '8px',
+                  cursor: hasLineItems ? 'pointer' : 'default',
+                  userSelect: 'none'
+                }}
+              >
                 <span
                   className="mono"
-                  onClick={() => hasLineItems && toggleLineItems(e.id)}
                   style={{
                     fontWeight: 600,
                     fontSize: '15px',
                     color: '#5B8A72',
-                    whiteSpace: 'nowrap',
-                    cursor: hasLineItems ? 'pointer' : 'default',
-                    userSelect: 'none'
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   {e.currency} {parseFloat(e.total_amount).toFixed(2)}

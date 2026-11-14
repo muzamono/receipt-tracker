@@ -1,6 +1,10 @@
 import axios from 'axios'
 
-const baseURL = 'http://192.168.100.172:8000'
+// Production build: same origin as the page, API under /api.
+// Dev server: backend on port 8000 of whatever host the page was opened from.
+const baseURL = import.meta.env.DEV
+  ? `http://${window.location.hostname}:8000/api`
+  : '/api'
 
 export { baseURL }
 

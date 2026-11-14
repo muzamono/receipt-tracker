@@ -12,7 +12,7 @@ export default function App() {
         borderBottom: '1px solid #E5E2DA'
       }}>
         <h1 style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.01em' }}>
-          Receipt Tracker
+          kira-kira
         </h1>
       </header>
 

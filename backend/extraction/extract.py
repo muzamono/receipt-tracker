@@ -21,6 +21,12 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError(f"GEMINI_API_KEY not found in environment or at {ENV_PATH}")
 
+# Model name can be overridden in .env with GEMINI_MODEL
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+
+# Pinned so the result does not depend on the installed SDK's default version
+API_VERSION = "v1beta"
+
 
 # ------------------------------------------------------------------
 # 1. Output Schema Definition (Pydantic)
@@ -82,7 +88,10 @@ def prepare_image(image_input: str | Path | bytes | Image.Image, max_dim: int = 
 # 3. Main Extraction Service
 # ------------------------------------------------------------------
 def extract_receipt(image_input: str | Path | bytes | Image.Image) -> dict:
-    client = genai.Client(api_key=API_KEY)
+    client = genai.Client(
+        api_key=API_KEY,
+        http_options=types.HttpOptions(api_version=API_VERSION),
+    )
 
     prompt = """
     Analyze this receipt and extract the requested fields.
@@ -106,7 +115,7 @@ def extract_receipt(image_input: str | Path | bytes | Image.Image) -> dict:
         content_part = processed_img
 
     response = client.models.generate_content(
-        model="gemini-flash-latest",
+        model=MODEL_NAME,
         contents=[content_part, prompt],
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
